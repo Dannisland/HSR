@@ -9,8 +9,8 @@ class InvArbEDRS(BaseModel):
     def __init__(self, cfg=None):
         super(InvArbEDRS, self).__init__()
         self.cfg = cfg
-        cfg.rescale = 'down'
-        self.down_net = EDRS(cfg)
+        # cfg.rescale = 'down'
+        # self.down_net = EDRS(cfg)
         # if cfg.quantization and cfg.quantization_type == 'naive':
         #     self.quantizer = Quantization()
         # elif cfg.quantization and cfg.quantization_type == 'round_soft':
@@ -29,7 +29,9 @@ class InvArbEDRS(BaseModel):
 
         self.up_net_2 = EDRS(cfg, ifsec=True)
 
-    def forward(self, x, sec, sec_2, scale, precalculated_lr=None):
+        self.up_net_3 = EDRS(cfg, ifsec=True)
+
+    def forward(self, x, sec, sec_2, sec_3, scale, precalculated_lr=None):
         B, C, H, W = x.shape
 
         lr_processed = torch.cat([x, sec], dim=1)
@@ -38,7 +40,9 @@ class InvArbEDRS(BaseModel):
         lr_processed_2 = torch.cat([sr_1, sec_2], dim=1)
         sr_2 = self.up_net_2(lr_processed_2, scale, H, W)
 
-        return sr_1, sr_2
+        lr_processed_3 = torch.cat([sr_2, sec_3], dim=1)
+        sr_3 = self.up_net_3(lr_processed_3, scale, H, W)
+        return sr_1, sr_2, sr_3
 
 
 class InvArbEDRS_Backup(BaseModel):

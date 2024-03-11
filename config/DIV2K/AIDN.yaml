@@ -4,7 +4,7 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 192
+  patch_size: 384
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -65,7 +65,7 @@ TRAIN:
   weight: LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
   resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
-  eval_freq: 10
+  eval_freq: 1
 
 Distributed:
   dist_url: tcp://127.0.0.1:6799
