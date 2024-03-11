@@ -12,14 +12,22 @@
 import torch.nn as nn
 
 import os
+
+from models.arbedrs import EDRS
+
+
 # os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 
 class RevealNet(nn.Module):
-    def __init__(self, input_nc, output_nc, nhf=64, norm_layer=None, output_function=nn.Sigmoid):
+    def __init__(self, input_nc, output_nc, nhf=64, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid, cfg=None):
         super(RevealNet, self).__init__()
         # input is (3) x 256 x 256
 
-        self.conv1 = nn.Conv2d(input_nc, nhf, 3, 2, 1)
+        self.cfg = cfg
+        cfg.rescale = 'down'
+        self.down_net = EDRS(cfg)
+
+        self.conv1 = nn.Conv2d(input_nc, nhf, 3, 1, 1)
         self.conv2 = nn.Conv2d(nhf, nhf * 2, 3, 1, 1)
         self.conv3 = nn.Conv2d(nhf * 2, nhf * 4, 3, 1, 1)
         self.conv4 = nn.Conv2d(nhf * 4, nhf * 2, 3, 1, 1)
@@ -36,17 +44,19 @@ class RevealNet(nn.Module):
             self.norm4 = norm_layer(nhf*2)
             self.norm5 = norm_layer(nhf)
 
-    def forward(self, input):
+    def forward(self, input, scale):
+
+        lr = self.down_net(input, 1.0 / scale)
 
         if self.norm_layer != None:
-            x=self.relu(self.norm1(self.conv1(input)))
+            x=self.relu(self.norm1(self.conv1(lr)))
             x=self.relu(self.norm2(self.conv2(x)))
             x=self.relu(self.norm3(self.conv3(x)))
             x=self.relu(self.norm4(self.conv4(x)))
             x=self.relu(self.norm5(self.conv5(x)))
             x=self.output(self.conv6(x))
         else:
-            x=self.relu(self.conv1(input))
+            x=self.relu(self.conv1(lr))
             x=self.relu(self.conv2(x))
             x=self.relu(self.conv3(x))
             x=self.relu(self.conv4(x))
@@ -60,7 +70,7 @@ if __name__ == "__main__":
     import torch
     # from torchsummary import summary
 
-    Hnet = RevealNet(input_nc=3, output_nc=3, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid)
+    Hnet = RevealNet(input_nc=3, output_nc=3)
     inputs = torch.randn(2,3,128,128)
     outputs = Hnet(inputs)
     print(outputs.shape)

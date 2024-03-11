@@ -1,4 +1,5 @@
 import torch
+import torchvision
 
 from base.base_model import BaseModel
 from models.arbedrs import EDRS
@@ -23,26 +24,25 @@ class InvArbEDRS(BaseModel):
                 from models.lib.jpg_module_DiffJPEG import JPGQuantizeFun
                 self.jpeg = JPGQuantizeFun(quality=90)
             else:
-                raise NotImplementedError('JPEG Compression Simulator {' + cfg.jpeg_type + '} has not been implemented!')
+                raise NotImplementedError(
+                    'JPEG Compression Simulator {' + cfg.jpeg_type + '} has not been implemented!')
         cfg.rescale = 'up'
         self.up_net = EDRS(cfg, ifsec=True)
 
         self.up_net_2 = EDRS(cfg, ifsec=True)
 
-        self.up_net_3 = EDRS(cfg, ifsec=True)
+        # self.up_net_3 = EDRS(cfg, ifsec=True)
 
-    def forward(self, x, sec, sec_2, sec_3, scale, precalculated_lr=None):
-        B, C, H, W = x.shape
+    def forward(self, x, sec, sec_2, scale, precalculated_lr=None):
+        B, C, H2, W2 = sec_2.shape
 
         lr_processed = torch.cat([x, sec], dim=1)
-        sr_1 = self.up_net(lr_processed, scale, H, W)
+        sr_1 = self.up_net(lr_processed, scale, H2, H2)
 
         lr_processed_2 = torch.cat([sr_1, sec_2], dim=1)
-        sr_2 = self.up_net_2(lr_processed_2, scale, H, W)
+        sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
 
-        lr_processed_3 = torch.cat([sr_2, sec_3], dim=1)
-        sr_3 = self.up_net_3(lr_processed_3, scale, H, W)
-        return sr_1, sr_2, sr_3
+        return sr_1, sr_2
 
 
 class InvArbEDRS_Backup(BaseModel):

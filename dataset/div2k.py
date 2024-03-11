@@ -37,17 +37,14 @@ class DIV2K(Dataset):
         img_gt = mmcv.imread(self.imgs[index]).astype(np.float32) / 255.
         img_sec = mmcv.imread(self.imgs[index_sec]).astype(np.float32) / 255.
         img_sec_2 = mmcv.imread(self.imgs[random.randint(0, len(self.imgs) - 1)]).astype(np.float32) / 255.
-        img_sec_3 = mmcv.imread(self.imgs[random.randint(0, len(self.imgs) - 1)]).astype(np.float32) / 255.
 
         # if self.training:
         img_gt = Xform.random_crop(img_gt, self.cfg.patch_size)
         img_gt = Xform.augment(img_gt, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
-        img_sec = Xform.random_crop(img_sec, int(self.cfg.patch_size / 8))
+        img_sec = Xform.random_crop(img_sec, self.cfg.patch_size)
         img_sec = Xform.augment(img_sec, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
-        img_sec_2 = Xform.random_crop(img_sec_2, int(self.cfg.patch_size / 4))
+        img_sec_2 = Xform.random_crop(img_sec_2, self.cfg.patch_size)
         img_sec_2 = Xform.augment(img_sec_2, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
-        img_sec_3 = Xform.random_crop(img_sec_3, int(self.cfg.patch_size / 2))
-        img_sec_3 = Xform.augment(img_sec_3, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
 
         img_gt = mmcv.bgr2rgb(img_gt)
         img_gt = torch.from_numpy(img_gt.transpose((2, 0, 1)))
@@ -55,9 +52,8 @@ class DIV2K(Dataset):
         img_sec = torch.from_numpy(img_sec.transpose((2, 0, 1)))
         img_sec_2 = mmcv.bgr2rgb(img_sec_2)
         img_sec_2 = torch.from_numpy(img_sec_2.transpose((2, 0, 1)))
-        img_sec_3 = mmcv.bgr2rgb(img_sec_3)
-        img_sec_3 = torch.from_numpy(img_sec_3.transpose((2, 0, 1)))
+
         # return img_gt
-        return {'img_gt': img_gt, 'img_sec': img_sec, 'img_sec_2': img_sec_2, 'img_sec_3': img_sec_3}
+        return {'img_gt': img_gt, 'img_sec': img_sec, 'img_sec_2': img_sec_2}
 
 

@@ -42,7 +42,7 @@ weights = [i / weights_np_sum for i in weights]
 def main():
     args = get_parser()
     # os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in args.train_gpu)
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
     cudnn.benchmark = True
 
@@ -97,8 +97,8 @@ def main_worker(gpu, ngpus_per_node, args):
     logger = get_logger()
     writer = SummaryWriter(cfg.save_path)
     model = get_model(cfg, logger)
-    revealNet = RevealNet(input_nc=3, output_nc=3, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid)
-    revealNet_2 = RevealNet(input_nc=3, output_nc=3, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid)
+    revealNet = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
+    revealNet_2 = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
 
     if cfg.sync_bn:
         logger.info("using DDP synced BN")
@@ -280,12 +280,14 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
             scale = cfg.scale
         else:
             if epoch == 0:
-                scale = random.randint(2, cfg.scale)
+                scale = 1.5 #random.randint(2, cfg.scale)
             else:
-                if cfg.balanceS:
-                    scale = choices(population, weights)[0]
-                else:
-                    scale = random.randint(11, cfg.scale * 10) / 10.0
+                scale = 1.5
+                # if cfg.balanceS:
+                #     scale = choices(population, weights)[0]
+                # else:
+                #     scale = random.randint(11, cfg.scale * 10) / 10.0
+
         current_iter = epoch * len(train_loader) + i + 1
         data_time.update(time.time() - end)
         hr, sec = batch['img_gt'], batch['img_sec']
@@ -295,11 +297,15 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         sec = sec.cuda(cfg.gpu, non_blocking=True)  # size = hr/scale
         sec_2 = sec_2.cuda(cfg.gpu, non_blocking=True)  # size = hr / (scale*2)
 
-        lr_1_4 = imresize(hr, scale=1.0 / (scale * 2)).detach()
+        lr_1_4 = imresize(hr, scale=1.0 / (scale * scale)).detach()
         lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
+
+        sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
+        sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
+
         restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
-        recovered = revealNet(restored_hr)
-        recovered_2 = revealNet_2(restored_hr2)
+        recovered = revealNet(restored_hr, scale)
+        recovered_2 = revealNet_2(restored_hr2, scale)
 
         # LOSS
         # loss_lr = loss_fn[0](encoded_lr, lr)  # 0: MSE 1:L1
@@ -404,8 +410,8 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
             lr_1_4 = imresize(hr, scale=1.0 / (scale*2)).detach()
             lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
             restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
-            recovered = revealNet(restored_hr)
-            recovered_2 = revealNet_2(restored_hr2)
+            recovered = revealNet(restored_hr, scale)
+            recovered_2 = revealNet_2(restored_hr2, scale)
 
             # LOSS
             loss_hr = loss_fn[1](restored_hr, lr_1_2)
