@@ -210,7 +210,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         loss_train, hr_loss, _ = train(train_loader, model, revealNet, revealNet_2, loss, optimizer, epoch, cfg)
         epoch_log = epoch + 1
-        # Adaptive LR
+        # # Adaptive LR
         if cfg.StepLR:
             scheduler.step()
         if main_process(cfg):
@@ -407,8 +407,12 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
             sec = sec.cuda(cfg.gpu, non_blocking=True)
             sec_2 = sec_2.cuda(cfg.gpu, non_blocking=True)  # size = hr / (scale*2)
 
-            lr_1_4 = imresize(hr, scale=1.0 / (scale*2)).detach()
+            lr_1_4 = imresize(hr, scale=1.0 / (scale * scale)).detach()
             lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
+
+            sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
+            sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
+
             restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
             recovered = revealNet(restored_hr, scale)
             recovered_2 = revealNet_2(restored_hr2, scale)
