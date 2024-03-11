@@ -65,7 +65,7 @@ TRAIN:
   weight: LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
   resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
-  eval_freq: 1
+  eval_freq: 10
 
 Distributed:
   dist_url: tcp://127.0.0.1:6799
