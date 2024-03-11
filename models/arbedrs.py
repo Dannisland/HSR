@@ -38,7 +38,7 @@ class EDRS(BaseModel):
         m_body.append(conv(n_feats, n_feats, kernel_size))
 
         # define tail module
-        if not args.fixed_scale:  # 原论文 True, 调节放缩倍率
+        if not args.fixed_scale:  # 原论文args.fixed_scale = False, 调节放缩倍率
             m_tail = [
                 # Upsampler(conv, scale, n_feats, act=False),
                 None,
