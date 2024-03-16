@@ -336,13 +336,13 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         with torch.no_grad():
             batch_enc_psnr = abs(kornia.losses.psnr_loss(restored_hr, lr_1_2, 1))
             batch_dec_psnr = abs(kornia.losses.psnr_loss(recovered, sec, 1))
-            batch_enc_ssim = abs(kornia.losses.ssim_loss(restored_hr.detach(), lr_1_2, window_size=5, reduction="mean"))
-            batch_dec_ssim = abs(kornia.losses.ssim_loss(recovered.detach(), sec, window_size=5, reduction="mean"))
+            batch_enc_ssim = 1 - abs(kornia.losses.ssim_loss(restored_hr.detach(), lr_1_2, window_size=5, reduction="mean"))
+            batch_dec_ssim = 1 - abs(kornia.losses.ssim_loss(recovered.detach(), sec, window_size=5, reduction="mean"))
 
             batch_enc_psnr_2 = abs(kornia.losses.psnr_loss(restored_hr2, hr, 1))
             batch_dec_psnr_2 = abs(kornia.losses.psnr_loss(recovered_2, sec_2, 1))
-            batch_enc_ssim_2 = abs(kornia.losses.ssim_loss(restored_hr2.detach(), hr, window_size=5, reduction="mean"))
-            batch_dec_ssim_2 = abs(
+            batch_enc_ssim_2 = 1 - abs(kornia.losses.ssim_loss(restored_hr2.detach(), hr, window_size=5, reduction="mean"))
+            batch_dec_ssim_2 = 1 - abs(
                 kornia.losses.ssim_loss(recovered_2.detach(), sec_2, window_size=5, reduction="mean"))
             data_result_info = ('1/4 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} '
                                 '1/2 SR == psnr_enc2:{}, psnr_dec2:{}, ssim_enc2:{}, ssim_dec2:{}'
