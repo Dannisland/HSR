@@ -318,8 +318,8 @@ def train(train_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, opt
         lr_1_4 = imresize(hr, scale=1.0 / (scale * scale)).detach()
         lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
 
-        sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
-        sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
+        sec = imresize(sec, scale=1.0 / (scale * scale * scale)).detach()
+        sec_2 = imresize(sec_2, scale=1.0 / (scale * scale)).detach()
         sec_3 = imresize(sec_3, scale=1.0 / scale).detach()
 
         restored_hr, restored_hr2, restored_hr3 = model(lr_1_8, sec, sec_2, sec_3, scale)
@@ -344,9 +344,10 @@ def train(train_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, opt
 
         batch_time.update(time.time() - end)
         end = time.time()
-        for m, x in zip([loss_meter, loss_hr_meter, loss_hr_meter2, loss_hr_meter3, loss_sec_meter, loss_sec_meter2,
-                         loss_sec_meter3],
-                        [loss, loss_hr, loss_hr_2, loss_hr_3, loss_sec, loss_sec_2, loss_sec_3]):
+        for m, x in zip([loss_meter, loss_hr_meter, loss_hr_meter2, loss_hr_meter3,
+                         loss_sec_meter, loss_sec_meter2, loss_sec_meter3],
+                        [loss, loss_hr, loss_hr_2, loss_hr_3,
+                         loss_sec, loss_sec_2, loss_sec_3]):
             m.update(x.item(), lr_1_8.shape[0])
         # Adjust lr
         if cfg.poly_lr:
@@ -377,7 +378,7 @@ def train(train_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, opt
             batch_dec_ssim_3 = 1 - abs(
                 kornia.losses.ssim_loss(recovered_3.detach(), sec_3, window_size=5, reduction="mean"))
 
-            data_result_info = ('1/8 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} \n'
+            data_result_info = ('\n1/8 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} \n'
                                 '1/4 SR == psnr_enc2:{}, psnr_dec2:{}, ssim_enc2:{}, ssim_dec2:{} \n'
                                 '1/2 SR == psnr_enc3:{}, psnr_dec3:{}, ssim_enc3:{}, ssim_dec3:{} \n'
                                 ).format(batch_enc_psnr, batch_dec_psnr, batch_enc_ssim, batch_dec_ssim,
@@ -459,7 +460,7 @@ def validate(val_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, ep
             sec_2 = imresize(sec_2, scale=1.0 / (scale * scale)).detach()
             sec_3 = imresize(sec_3, scale=1.0 / scale).detach()
 
-            restored_hr, restored_hr2, restored_hr3 = model(lr_1_4, sec, sec_2, sec_3, scale)
+            restored_hr, restored_hr2, restored_hr3 = model(lr_1_8, sec, sec_2, sec_3, scale)
             recovered = revealNet(restored_hr, scale)
             recovered_2 = revealNet_2(restored_hr2, scale)
             recovered_3 = revealNet_3(restored_hr3, scale)
