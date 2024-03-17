@@ -31,10 +31,11 @@ class InvArbEDRS(BaseModel):
 
         self.up_net_2 = EDRS(cfg, ifsec=True)
 
-        # self.up_net_3 = EDRS(cfg, ifsec=True)
+        self.up_net_3 = EDRS(cfg, ifsec=True)
 
-    def forward(self, x, sec, sec_2, scale, precalculated_lr=None):
+    def forward(self, x, sec, sec_2, sec_3, scale, precalculated_lr=None):
         B, C, H2, W2 = sec_2.shape
+        _, _, H3, W3 = sec_3.shape
 
         lr_processed = torch.cat([x, sec], dim=1)
         sr_1 = self.up_net(lr_processed, scale, H2, H2)
@@ -42,7 +43,10 @@ class InvArbEDRS(BaseModel):
         lr_processed_2 = torch.cat([sr_1, sec_2], dim=1)
         sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
 
-        return sr_1, sr_2
+        lr_processed_3 = torch.cat([sr_2, sec_3], dim=1)
+        sr_3 = self.up_net_2(lr_processed_3, scale, int(H3 * scale), int(H3 * scale))
+
+        return sr_1, sr_2, sr_3
 
 
 class InvArbEDRS_Backup(BaseModel):
