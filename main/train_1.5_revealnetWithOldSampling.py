@@ -17,10 +17,14 @@ import torch.distributed as dist
 from tensorboardX import SummaryWriter
 import cv2
 
-sys.path.append("/opt/data/xiaobin/AIDN")
+#todo 注意U4/U2的路径位置
+sys.path.append("/opt/data/xiaobin/Project/AIDN")
 from base.baseTrainer import poly_learning_rate, reduce_tensor, save_checkpoint, load_state_dict
 from base.utilities import get_parser, get_logger, main_process, AverageMeter
-from models.RevealNet import RevealNet
+
+################## 注意此处的 revealnet选取 ###################
+# todo revealnet选取
+from models.RevealNet_tradition_downsampling import RevealNet
 from models import get_model
 from metrics.loss import *
 from metrics import psnr, ssim
@@ -42,7 +46,7 @@ weights = [i / weights_np_sum for i in weights]
 def main():
     args = get_parser()
     # os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in args.train_gpu)
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 
     cudnn.benchmark = True
 
@@ -97,8 +101,8 @@ def main_worker(gpu, ngpus_per_node, args):
     logger = get_logger()
     writer = SummaryWriter(cfg.save_path)
     model = get_model(cfg, logger)
-    revealNet = RevealNet(input_nc=3, output_nc=3, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid)
-    revealNet_2 = RevealNet(input_nc=3, output_nc=3, norm_layer=nn.InstanceNorm2d, output_function=nn.Sigmoid)
+    revealNet = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
+    revealNet_2 = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
 
     if cfg.sync_bn:
         logger.info("using DDP synced BN")
@@ -210,7 +214,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         loss_train, hr_loss, _ = train(train_loader, model, revealNet, revealNet_2, loss, optimizer, epoch, cfg)
         epoch_log = epoch + 1
-        # Adaptive LR
+        # # Adaptive LR
         if cfg.StepLR:
             scheduler.step()
         if main_process(cfg):
@@ -280,12 +284,14 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
             scale = cfg.scale
         else:
             if epoch == 0:
-                scale = random.randint(2, cfg.scale)
+                scale = 1.5 #random.randint(2, cfg.scale)
             else:
-                if cfg.balanceS:
-                    scale = choices(population, weights)[0]
-                else:
-                    scale = random.randint(11, cfg.scale * 10) / 10.0
+                scale = 1.5
+                # if cfg.balanceS:
+                #     scale = choices(population, weights)[0]
+                # else:
+                #     scale = random.randint(11, cfg.scale * 10) / 10.0
+
         current_iter = epoch * len(train_loader) + i + 1
         data_time.update(time.time() - end)
         hr, sec = batch['img_gt'], batch['img_sec']
@@ -295,11 +301,15 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         sec = sec.cuda(cfg.gpu, non_blocking=True)  # size = hr/scale
         sec_2 = sec_2.cuda(cfg.gpu, non_blocking=True)  # size = hr / (scale*2)
 
-        lr_1_4 = imresize(hr, scale=1.0 / (scale * 2)).detach()
+        lr_1_4 = imresize(hr, scale=1.0 / (scale * scale)).detach()
         lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
+
+        sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
+        sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
+
         restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
-        recovered = revealNet(restored_hr)
-        recovered_2 = revealNet_2(restored_hr2)
+        recovered = revealNet(restored_hr, scale, sec.shape)
+        recovered_2 = revealNet_2(restored_hr2, scale, sec_2.shape)
 
         # LOSS
         # loss_lr = loss_fn[0](encoded_lr, lr)  # 0: MSE 1:L1
@@ -330,13 +340,13 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         with torch.no_grad():
             batch_enc_psnr = abs(kornia.losses.psnr_loss(restored_hr, lr_1_2, 1))
             batch_dec_psnr = abs(kornia.losses.psnr_loss(recovered, sec, 1))
-            batch_enc_ssim = abs(kornia.losses.ssim_loss(restored_hr.detach(), lr_1_2, window_size=5, reduction="mean"))
-            batch_dec_ssim = abs(kornia.losses.ssim_loss(recovered.detach(), sec, window_size=5, reduction="mean"))
+            batch_enc_ssim = 1 - abs(kornia.losses.ssim_loss(restored_hr.detach(), lr_1_2, window_size=5, reduction="mean"))
+            batch_dec_ssim = 1 - abs(kornia.losses.ssim_loss(recovered.detach(), sec, window_size=5, reduction="mean"))
 
             batch_enc_psnr_2 = abs(kornia.losses.psnr_loss(restored_hr2, hr, 1))
             batch_dec_psnr_2 = abs(kornia.losses.psnr_loss(recovered_2, sec_2, 1))
-            batch_enc_ssim_2 = abs(kornia.losses.ssim_loss(restored_hr2.detach(), hr, window_size=5, reduction="mean"))
-            batch_dec_ssim_2 = abs(
+            batch_enc_ssim_2 = 1 - abs(kornia.losses.ssim_loss(restored_hr2.detach(), hr, window_size=5, reduction="mean"))
+            batch_dec_ssim_2 = 1 - abs(
                 kornia.losses.ssim_loss(recovered_2.detach(), sec_2, window_size=5, reduction="mean"))
             data_result_info = ('1/4 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} '
                                 '1/2 SR == psnr_enc2:{}, psnr_dec2:{}, ssim_enc2:{}, ssim_dec2:{}'
@@ -401,11 +411,15 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
             sec = sec.cuda(cfg.gpu, non_blocking=True)
             sec_2 = sec_2.cuda(cfg.gpu, non_blocking=True)  # size = hr / (scale*2)
 
-            lr_1_4 = imresize(hr, scale=1.0 / (scale*2)).detach()
+            lr_1_4 = imresize(hr, scale=1.0 / (scale * scale)).detach()
             lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
+
+            sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
+            sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
+
             restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
-            recovered = revealNet(restored_hr)
-            recovered_2 = revealNet_2(restored_hr2)
+            recovered = revealNet(restored_hr, scale)
+            recovered_2 = revealNet_2(restored_hr2, scale)
 
             # LOSS
             loss_hr = loss_fn[1](restored_hr, lr_1_2)
