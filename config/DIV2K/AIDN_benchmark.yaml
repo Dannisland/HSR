@@ -4,7 +4,7 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 192
+  patch_size: 288
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -21,7 +21,7 @@ NETWORK:
   down_sampler: sampleB
   n_resblocks: 16
   n_feats: 64
-  fixed_scale: False # 1: 固定比例（2，4，8） 0: 自定义比例
+  fixed_scale: False # True: 固定比例（2，4，8） False: 自定义比例
   scale: 2
   rescale:  # not used
   n_colors: 3

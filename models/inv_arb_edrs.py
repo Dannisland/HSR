@@ -41,7 +41,7 @@ class InvArbEDRS(BaseModel):
         sr_1 = self.up_net(lr_processed, scale, H2, H2)
 
         lr_processed_2 = torch.cat([sr_1, sec_2], dim=1)
-        sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
+        sr_2 = self.up_net_2(lr_processed_2, scale, H3, H3)
 
         lr_processed_3 = torch.cat([sr_2, sec_3], dim=1)
         sr_3 = self.up_net_2(lr_processed_3, scale, int(H3 * scale), int(H3 * scale))
