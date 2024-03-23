@@ -418,8 +418,8 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
             sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
 
             restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
-            recovered = revealNet(restored_hr, scale)
-            recovered_2 = revealNet_2(restored_hr2, scale)
+            recovered = revealNet(restored_hr, scale, sec.shape)
+            recovered_2 = revealNet_2(restored_hr2, scale, sec_2.shape)
 
             # LOSS
             loss_hr = loss_fn[1](restored_hr, lr_1_2)
