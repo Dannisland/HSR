@@ -329,9 +329,11 @@ def train(train_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, opt
 
         # LOSS
         # loss_lr = loss_fn[0](encoded_lr, lr)  # 0: MSE 1:L1
-        loss_hr = loss_fn[1](restored_hr, lr_1_4)
-        loss_hr_2 = loss_fn[1](restored_hr2, lr_1_2)
-        loss_hr_3 = loss_fn[1](restored_hr3, hr)
+        # todo 尝试调整网络权重  通过 * cfg.lada
+
+        loss_hr = loss_fn[1](restored_hr, lr_1_4) * cfg.lada
+        loss_hr_2 = loss_fn[1](restored_hr2, lr_1_2) * cfg.lada
+        loss_hr_3 = loss_fn[1](restored_hr3, hr) * cfg.lada
         loss_sec = loss_fn[1](sec, recovered)
         loss_sec_2 = loss_fn[1](sec_2, recovered_2)
         loss_sec_3 = loss_fn[1](sec_3, recovered_3)

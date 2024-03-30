@@ -4,7 +4,8 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 288
+  # todo 记得每次要调整todo内容 ==> patch_size
+  patch_size: 432
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -13,6 +14,8 @@ DATA:
 
 LOSS:
   loss_lr_weight: 1.0
+  # todo 记得每次要调整todo内容 ==> lada
+  lada: 1.0  # 用于提高sr图像的质量的超参数
 
 NETWORK:
   base_resolution: 4
@@ -35,14 +38,13 @@ NETWORK:
   # jpeg_type: DiffJPEG
 
 
-
-
 TRAIN:
   use_sgd: False
   sync_bn: True  # adopt sync_bn or not
   train_gpu: [0]
   workers: 16  # data loader workers
-  batch_size: 5  # batch size for training
+  # todo 记得每次要调整todo内容 ==> batch_size  288: 5  432 : 2
+  batch_size: 2  # batch size for training
   batch_size_val: 16  # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.0001
   StepLR: True
@@ -87,3 +89,4 @@ TEST:
   test_batch_size: 1
   model_path:
   save_folder:
+  benchmark: False
