@@ -87,3 +87,4 @@ TEST:
   test_batch_size: 1
   model_path:
   save_folder:
+  benchmark: False

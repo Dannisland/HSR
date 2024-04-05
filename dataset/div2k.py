@@ -38,6 +38,12 @@ class DIV2K(Dataset):
         img_sec = mmcv.imread(self.imgs[index_sec]).astype(np.float32) / 255.
         img_sec_2 = mmcv.imread(self.imgs[random.randint(0, len(self.imgs) - 1)]).astype(np.float32) / 255.
 
+        if self.cfg.benchmark:
+            img_gt = mmcv.imresize(img_gt, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
+            img_sec = mmcv.imresize(img_sec, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
+            img_sec_2 = mmcv.imresize(img_sec_2, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
+
+
         # if self.training:
         img_gt = Xform.random_crop(img_gt, self.cfg.patch_size)
         img_gt = Xform.augment(img_gt, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
