@@ -231,9 +231,9 @@ def main_worker(gpu, ngpus_per_node, args):
             if main_process(cfg):
                 logger.info('VAL Epoch: {} '
                             'loss_val: {:.6} '
-                            'loss_hr: {:.6} '
-                            'PSNR: {:.4},{:.4},{:.4},{:.4} '
-                            'SSIM: {:.4},{:.4},{:.4},{:.4} '
+                            'loss_hr: {:.6} \n'
+                            'PSNR: {:.4},{:.4},{:.4},{:.4} \n'
+                            'SSIM: {:.4},{:.4},{:.4},{:.4} \n'
                             .format(epoch_log, loss_val, hr_loss, *PSNR, *SSIM)
                             )
                 for m, s in zip([loss_val, hr_loss, *PSNR, *SSIM],
@@ -353,8 +353,8 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
                 kornia.losses.ssim_loss(restored_hr2.detach(), hr, window_size=5, reduction="mean"))
             batch_dec_ssim_2 = 1 - abs(
                 kornia.losses.ssim_loss(recovered_2.detach(), sec_2, window_size=5, reduction="mean"))
-            data_result_info = ('1/4 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} '
-                                '1/2 SR == psnr_enc2:{}, psnr_dec2:{}, ssim_enc2:{}, ssim_dec2:{}'
+            data_result_info = ('1/4 SR == psnr_enc:{}, psnr_dec:{}, ssim_enc:{}, ssim_dec:{} \n'
+                                '1/2 SR == psnr_enc2:{}, psnr_dec2:{}, ssim_enc2:{}, ssim_dec2:{}\n'
                                 ).format(batch_enc_psnr, batch_dec_psnr, batch_enc_ssim, batch_dec_ssim,
                                          batch_enc_psnr_2, batch_dec_psnr_2, batch_enc_ssim_2, batch_dec_ssim_2)
 
