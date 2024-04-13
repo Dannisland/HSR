@@ -42,7 +42,7 @@ weights = [i / weights_np_sum for i in weights]
 def main():
     args = get_parser()
     # os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in args.train_gpu)
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
     cudnn.benchmark = True
 
@@ -98,7 +98,7 @@ def main_worker(gpu, ngpus_per_node, args):
     writer = SummaryWriter(cfg.save_path)
     model = get_model(cfg, logger)
     # todo 修改输出通道数
-    revealNet = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
+    revealNet = RevealNet(input_nc=3, output_nc=6, cfg=cfg)
     revealNet_2 = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
 
     if cfg.sync_bn:
@@ -294,7 +294,7 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         hr, sec = batch['img_gt'], batch['img_sec']
         sec_2 = batch['img_sec_2']
 
-        noisyMask = torch.rand(cfg.batch_size, 3, 86, 86).cuda(cfg.gpu, non_blocking=True) * 0.5
+        noisyMask = torch.rand(cfg.batch_size, 3, cfg.patch_size, cfg.patch_size).cuda(cfg.gpu, non_blocking=True)
 
         hr = hr.cuda(cfg.gpu, non_blocking=True)
         sec = sec.cuda(cfg.gpu, non_blocking=True)  # size = hr/scale
@@ -304,15 +304,14 @@ def train(train_loader, model, revealNet, revealNet_2, loss_fn, optimizer, epoch
         lr_1_2 = imresize(hr, scale=1.0 / scale).detach()
 
         sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
-        # todo sec直接和noisyMask相加
-        sec_with_noisy = sec + noisyMask
-        sec_with_noisy = torch.clamp(sec_with_noisy, 0, 1)
-
         sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
 
-        restored_hr, restored_hr2 = model(lr_1_4, sec_with_noisy, sec_2, scale)
-        recovered_with_noisy = revealNet(restored_hr, scale)
-        recovered = recovered_with_noisy - noisyMask
+        restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
+        # recovered = revealNet(restored_hr, scale)
+        # todo 修改通道， 0-2 秘密图像， 3-5 噪声
+        recovered_list = revealNet(restored_hr, scale)
+        recovered = recovered_list[:, 0:3, ...]
+        rev_noisy = recovered_list[:, 3:6, ...]
         recovered_2 = revealNet_2(restored_hr2, scale)
 
         # LOSS
@@ -407,14 +406,12 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
     model.eval()
     revealNet.eval()
     revealNet_2.eval()
-    with (torch.no_grad()):
+    with torch.no_grad():
         for step, batch in enumerate(val_loader):
-            scale = 1.5  # 4
+            scale = cfg.scale  # 4
             hr, sec = batch['img_gt'], batch['img_sec']
             sec_2 = batch['img_sec_2']
-            B, C, _, _ = sec.shape
 
-            noisyMask = torch.rand(B, C, 86, 86).cuda(cfg.gpu, non_blocking=True) * 0.5
             hr = hr.cuda(cfg.gpu, non_blocking=True)
             sec = sec.cuda(cfg.gpu, non_blocking=True)
             sec_2 = sec_2.cuda(cfg.gpu, non_blocking=True)  # size = hr / (scale*2)
@@ -425,15 +422,12 @@ def validate(val_loader, model, revealNet, revealNet_2, loss_fn, epoch, cfg):
             sec = imresize(sec, scale=1.0 / (scale * scale)).detach()
             sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
 
-            # todo sec直接和noisyMask相加
-            sec_with_noisy = sec + noisyMask
-            sec_with_noisy = torch.clamp(sec_with_noisy, 0, 1)
-
-            restored_hr, restored_hr2 = model(lr_1_4, sec_with_noisy, sec_2, scale)
+            restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
             # recovered = revealNet(restored_hr, scale)
             # todo 修改通道， 0-2 秘密图像， 3-5 噪声
-            recovered_with_noisy = revealNet(restored_hr, scale)
-            recovered = recovered_with_noisy - noisyMask
+            recovered_list = revealNet(restored_hr, scale)
+            recovered = recovered_list[:, 0:3, ...]
+            rev_noisy = recovered_list[:, 3:6, ...]
             recovered_2 = revealNet_2(restored_hr2, scale)
 
             # LOSS
