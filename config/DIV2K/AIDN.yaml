@@ -4,7 +4,7 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 192
+  patch_size: 216
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -21,7 +21,7 @@ NETWORK:
   down_sampler: sampleB
   n_resblocks: 16
   n_feats: 64
-  fixed_scale: False  # old: False
+  fixed_scale: True  # old: False
   scale: 2
   rescale:  # not used
   n_colors: 3
@@ -42,7 +42,7 @@ TRAIN:
   sync_bn: True  # adopt sync_bn or not
   train_gpu: [0]
   workers: 16  # data loader workers
-  batch_size: 8 # 12  # batch size for training
+  batch_size: 24 # 12  # batch size for training
   batch_size_val: 16  # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.0001
   StepLR: True
@@ -62,10 +62,11 @@ TRAIN:
   print_freq: 10
   save_freq: 1
   save_path:
-  weight: LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
+  weight: # /opt/data/xiaobin/Project/AIDN/LOG/DIV2K/train_1.5*2_withOldSamplingAddDist/model/AIDN.pth.tar # LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
+
   resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
-  eval_freq: 10
+  eval_freq: 1
 
 Distributed:
   dist_url: tcp://127.0.0.1:6799

@@ -10,7 +10,7 @@ from os.path import join
 from torch import nn
 from tqdm import tqdm
 
-sys.path.append("/opt/data/xiaobin/AIDN")
+sys.path.append("/opt/data/xiaobin/Project/AIDN")
 
 from base.utilities import get_parser, get_logger, AverageMeter
 from models.RevealNet_tradition_downsampling import RevealNet
@@ -97,6 +97,9 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
 
     psnr_meter_sr, psnr_meter_rev_1_2 = AverageMeter(), AverageMeter()
     ssim_meter_sr, ssim_meter_rev_1_2 = AverageMeter(), AverageMeter()
+
+    psnr_meter_rev_dist, psnr_meter_rev_redist = AverageMeter(), AverageMeter()
+
     filepath = os.path.join(cfg.save_folder, cfg.data_name + 'x' + str(scale) + '.txt')
     with torch.no_grad():
         model.eval()
@@ -114,6 +117,12 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 sec_2 = imresize(sec_2, scale=1.0 / scale).detach()
 
                 restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
+
+                _, _, w, h = restored_hr.shape
+                dist = nn.functional.interpolate(restored_hr2, [w, h], mode="bicubic")
+
+                rev_dist = revealNet(dist, scale, sec.shape)
+
                 recovered = revealNet(restored_hr, scale, sec.shape)
                 recovered_2 = revealNet_2(restored_hr2, scale, sec_2.shape)
 
@@ -125,6 +134,10 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 ########################## CALCULATE METRIC
                 restored_hr = util.tensor2img(restored_hr)
                 restored_hr2 = util.tensor2img(restored_hr2)
+
+                dist = util.tensor2img(dist)
+                rev_dist = util.tensor2img(rev_dist)
+
                 recovered = util.tensor2img(recovered)
                 recovered_2 = util.tensor2img(recovered_2)
                 sec = util.tensor2img(sec)
@@ -155,6 +168,9 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 ssim_meter_rev_1_4.update(util.calculate_ssim(recovered * 255, sec * 255))
                 ssim_meter_rev_1_2.update(util.calculate_ssim(recovered_2 * 255, sec_2 * 255))
 
+                psnr_meter_rev_dist.update(util.calculate_psnr(dist * 255, restored_hr * 255))
+                psnr_meter_rev_redist.update(util.calculate_psnr(rev_dist * 255, sec * 255))
+
                 # 测试，可删
                 # psnr_meter_rev_1_4.update(util.calculate_psnr(restored_hr * 255, lr_1_2 * 255))
                 # psnr_meter_rev_1_2.update(util.calculate_psnr(restored_hr2 * 255, hr * 255))
@@ -172,10 +188,12 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 if save:
                     # f.write(test_data_loader.dataset.imgs[i].split('/')[-1].split('.')[0]+' '+'{:.2f}'.format(psnr_y_hr_)+' '+ '{:.4f}'.format(ssim_y_hr_) + ' ' +'{:.4f}'.format(lpips_a) +'_'+'{:.2f}'.format(psnr_y_lr_)+' '+ '{:.4f}'.format(ssim_y_lr_) +'\n')
                     for x, last_fix in zip([hr, sec, sec_2, lr_1_4, lr_1_2,
-                                            restored_hr, restored_hr2, recovered, recovered_2],
+                                            restored_hr, restored_hr2, recovered, recovered_2,
+                                            dist, rev_dist],
                                            ["_hr.png", "_sec.png", "_sec_2.png",
                                             "_lr_1_4.png", "_lr_1_2.png", "_restored_hr.png",
-                                            "_restored_hr2.png", "_recovered.png", "_recovered_2.png"]):
+                                            "_restored_hr2.png", "_recovered.png", "_recovered_2.png",
+                                            "_dist.png", "_redist.png"]):
                         # print(111)
                         mmcv.imwrite(mmcv.rgb2bgr(np.uint8(x*255)),
                                      join(cfg.save_folder, cfg.data_name + '_x%.1f' % scale,
@@ -190,10 +208,14 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 'SSIM_Rev_1_4: {ssim_meter_rev_1_4.avg:.4f}\n'
                 'PSNR_Rev_1_2: {psnr_meter_rev_1_2.avg:.2f}\n'
                 'SSIM_Rev_1_2: {ssim_meter_rev_1_2.avg:.4f}\n'
+                '========> Distribution: \n'
+                'PSNR_Dist: {psnr_meter_rev_dist.avg:.4f}\n'
+                'PSNR_ReDist: {psnr_meter_rev_redist.avg:.4f}\n'
                 .format(psnr_meter_sr_1_2=psnr_meter_sr_1_2, ssim_meter_sr_1_2=ssim_meter_sr_1_2,
                         psnr_meter_sr=psnr_meter_sr, ssim_meter_sr=ssim_meter_sr,
                         psnr_meter_rev_1_4=psnr_meter_rev_1_4, ssim_meter_rev_1_4=ssim_meter_rev_1_4,
-                        psnr_meter_rev_1_2=psnr_meter_rev_1_2, ssim_meter_rev_1_2=ssim_meter_rev_1_2
+                        psnr_meter_rev_1_2=psnr_meter_rev_1_2, ssim_meter_rev_1_2=ssim_meter_rev_1_2,
+                        psnr_meter_rev_dist=psnr_meter_rev_dist, psnr_meter_rev_redist=psnr_meter_rev_redist
                         ))
 
 

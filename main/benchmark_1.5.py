@@ -115,7 +115,7 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
 
                 restored_hr, restored_hr2 = model(lr_1_4, sec, sec_2, scale)
                 recovered = revealNet(restored_hr, scale)
-                recovered_2 = revealNet_2(restored_hr2, scale)
+                recovered_2 = revealNet(restored_hr2, scale*scale)
 
                 restored_hr = torch.clamp(restored_hr, 0, 1)
                 restored_hr2 = torch.clamp(restored_hr2, 0, 1)
@@ -145,15 +145,15 @@ def test(model, revealNet, revealNet_2, test_data_loader, scale=4, save=False, d
                 #     lr_1_4 = lr_1_4[crop_border:-crop_border, crop_border:-crop_border, :]
                 #     lr_1_2 = lr_1_2[crop_border:-crop_border, crop_border:-crop_border, :]
 
-                psnr_meter_sr_1_2.update(util.calculate_psnr(restored_hr * 255, lr_1_2 * 255))
-                psnr_meter_sr.update(util.calculate_psnr(restored_hr2 * 255, hr * 255))
-                ssim_meter_sr_1_2.update(util.calculate_ssim(restored_hr * 255, lr_1_2 * 255))
-                ssim_meter_sr.update(util.calculate_ssim(restored_hr2 * 255, hr * 255))
-
-                psnr_meter_rev_1_4.update(util.calculate_psnr(recovered * 255, sec * 255))
-                psnr_meter_rev_1_2.update(util.calculate_psnr(recovered_2 * 255, sec_2 * 255))
-                ssim_meter_rev_1_4.update(util.calculate_ssim(recovered * 255, sec * 255))
-                ssim_meter_rev_1_2.update(util.calculate_ssim(recovered_2 * 255, sec_2 * 255))
+                # psnr_meter_sr_1_2.update(util.calculate_psnr(restored_hr * 255, lr_1_2 * 255))
+                # psnr_meter_sr.update(util.calculate_psnr(restored_hr2 * 255, hr * 255))
+                # ssim_meter_sr_1_2.update(util.calculate_ssim(restored_hr * 255, lr_1_2 * 255))
+                # ssim_meter_sr.update(util.calculate_ssim(restored_hr2 * 255, hr * 255))
+                #
+                # psnr_meter_rev_1_4.update(util.calculate_psnr(recovered * 255, sec * 255))
+                # psnr_meter_rev_1_2.update(util.calculate_psnr(recovered_2 * 255, sec_2 * 255))
+                # ssim_meter_rev_1_4.update(util.calculate_ssim(recovered * 255, sec * 255))
+                # ssim_meter_rev_1_2.update(util.calculate_ssim(recovered_2 * 255, sec_2 * 255))
 
                 if benchmark_lpips:
                     lpips_a = loss_fn_alex(
