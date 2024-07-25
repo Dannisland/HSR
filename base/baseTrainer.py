@@ -102,6 +102,32 @@ def save_checkpoint(model, model2, model3, other_state: dict, sav_path, is_best=
     if is_best:
         shutil.copyfile(filename, join(sav_path, 'AIDN.pth.tar'))
 
+def save_checkpoint_loop1(model, model2, other_state: dict, sav_path, is_best=False, filename='AIDN_last.pth.tar'):
+    if isinstance(model, (DistributedDataParallel, DataParallel)):
+        weight = model.module.state_dict()
+    elif isinstance(model, torch.nn.Module):
+        weight = model.state_dict()
+    else:
+        raise ValueError('model must be nn.Module or nn.DataParallel!')
+
+    if isinstance(model2, (DistributedDataParallel, DataParallel)):
+        weight2 = model2.module.state_dict()
+    elif isinstance(model2, torch.nn.Module):
+        weight2 = model2.state_dict()
+    else:
+        raise ValueError('model must be nn.Module or nn.DataParallel!')
+
+
+    check_makedirs(sav_path)
+
+    other_state['state_dict'] = weight
+    other_state['reveal'] = weight2
+
+    filename = join(sav_path, filename)
+    torch.save(other_state, filename)
+    if is_best:
+        shutil.copyfile(filename, join(sav_path, 'AIDN.pth.tar'))
+
 
 def save_checkpoint_loop3(model, model2, model3, model4, other_state: dict, sav_path, is_best=False, filename='AIDN_last.pth.tar'):
     if isinstance(model, (DistributedDataParallel, DataParallel)):

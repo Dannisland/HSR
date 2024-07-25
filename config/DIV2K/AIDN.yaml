@@ -4,7 +4,7 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 216
+  patch_size: 192
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -19,9 +19,9 @@ NETWORK:
   arch: InvEDRS_arb
   up_sampler: sampleB
   down_sampler: sampleB
-  n_resblocks: 16
+  n_resblocks: 8 # 16
   n_feats: 64
-  fixed_scale: True  # old: False
+  fixed_scale: False  # old: False
   scale: 2
   rescale:  # not used
   n_colors: 3
@@ -42,7 +42,7 @@ TRAIN:
   sync_bn: True  # adopt sync_bn or not
   train_gpu: [0]
   workers: 16  # data loader workers
-  batch_size: 24 # 12  # batch size for training
+  batch_size: 12 # 12  # batch size for training
   batch_size_val: 16  # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.0001
   StepLR: True
@@ -57,7 +57,7 @@ TRAIN:
   start_epoch: 0
   power: 0.9
   momentum: 0.9
-  weight_decay: 0.002
+  weight_decay: 0.00001
   manual_seed: 131
   print_freq: 10
   save_freq: 1
@@ -67,6 +67,8 @@ TRAIN:
   resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend
   eval_freq: 1
+
+  eps: 0.000001
 
 Distributed:
   dist_url: tcp://127.0.0.1:6799

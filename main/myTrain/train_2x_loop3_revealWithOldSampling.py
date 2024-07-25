@@ -21,7 +21,7 @@ sys.path.append("/opt/data/xiaobin/Project/AIDN")
 from base.baseTrainer import poly_learning_rate, reduce_tensor, save_checkpoint_loop3, load_state_dict
 from base.utilities import get_parser, get_logger, main_process, AverageMeter
 from models.RevealNet_tradition_downsampling import RevealNet
-from models import get_model
+from models import get_model_loop3
 from metrics.loss import *
 from metrics import psnr, ssim
 from dataset.torch_bicubic import imresize
@@ -98,7 +98,7 @@ def main_worker(gpu, ngpus_per_node, args):
     global logger, writer
     logger = get_logger()
     writer = SummaryWriter(cfg.save_path)
-    model = get_model(cfg, logger)
+    model = get_model_loop3(cfg, logger)
     revealNet = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
     revealNet_2 = RevealNet(input_nc=3, output_nc=3, cfg=cfg)
     revealNet_3 = RevealNet(input_nc=3, output_nc=3, cfg=cfg)

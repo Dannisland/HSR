@@ -3,8 +3,8 @@ import torchvision
 
 from base.base_model import BaseModel
 from models.arbedrs import EDRS
+from models.arbedrs_inv import EDRS as EDRS_INV
 from models.lib.quantization import Quantization, Quantization_RS
-
 
 class InvArbEDRS(BaseModel):
     def __init__(self, cfg=None):
@@ -43,6 +43,30 @@ class InvArbEDRS(BaseModel):
         sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
 
         return sr_1, sr_2
+
+class InvArbEDRS_Inv(BaseModel):
+    def __init__(self, cfg=None):
+        super(InvArbEDRS_Inv, self).__init__()
+        self.cfg = cfg
+        cfg.rescale = 'down'
+        self.down_net = EDRS_INV(cfg, ifsec=True)
+
+        cfg.rescale = 'up'
+        self.up_net = EDRS_INV(cfg, ifsec=True)
+
+        # self.up_net_2 = EDRS_INV(cfg, ifsec=True)
+
+        # self.up_net_3 = EDRS_INV(cfg, ifsec=True)
+
+    def forward(self, input, scale, rev=False):
+        B, C, H, W = input.shape
+        if not rev:
+            output = self.up_net(input, scale, int(H*scale), int(W*scale))
+        else:
+            output = self.down_net(input, scale)
+
+        return output
+
 
 
 class InvArbEDRS_Backup(BaseModel):
