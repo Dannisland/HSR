@@ -60,6 +60,8 @@ class InvArbEDRS_Inv(BaseModel):
 
     def forward(self, input, scale, rev=False):
         B, C, H, W = input.shape
+        if H == 86:
+            H, W = 85.5, 85.5
         if not rev:
             output = self.up_net(input, scale, int(H*scale), int(W*scale))
         else:

@@ -19,6 +19,7 @@ class EDRS(BaseModel):
         rescale = args.rescale
         self.rescale = rescale
         self.fixed_scale = args.fixed_scale
+        self.softmax = nn.Softmax()
 
         # self.sub_mean = MeanShift(args.rgb_range)
         # self.add_mean = MeanShift(args.rgb_range, sign=1)
@@ -45,6 +46,7 @@ class EDRS(BaseModel):
                 # Upsampler(conv, scale, n_feats, act=False),
                 None,
                 conv(n_feats, args.n_colors, kernel_size)
+
             ] if rescale == 'up' else [
                 # Downsampler(conv, scale, n_feats, act=False),
                 None,
@@ -105,6 +107,8 @@ class EDRS(BaseModel):
             res += x
 
             x = self.tail(res)
+
+        x = self.softmax(x)
 
         return x
 

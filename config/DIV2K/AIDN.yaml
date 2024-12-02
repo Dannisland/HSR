@@ -62,7 +62,7 @@ TRAIN:
   print_freq: 10
   save_freq: 1
   save_path:
-  weight: # /opt/data/xiaobin/Project/AIDN/LOG/DIV2K/train_1.5*2_withOldSamplingAddDist/model/AIDN.pth.tar # LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
+  weight: # /opt/data/xiaobin/Project/AIDN/LOG/DIV2K/train_inv_udh/model/AIDN_last.pth.tar # LOG/DIV2K/pre-train/AIDN_pretrainedx4.pth.tar
 
   resume:
   evaluate: True  # evaluate on validation set, extra gpu memory needed and small batch_size_val is recommend

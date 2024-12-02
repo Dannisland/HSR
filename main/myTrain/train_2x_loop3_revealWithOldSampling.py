@@ -306,7 +306,7 @@ def train(train_loader, model, revealNet, revealNet_2, revealNet_3, loss_fn, opt
         #         if cfg.balanceS:
         #             scale = choices(population, weights)[0]
         #         else:
-        #             scale = random.randint(11, cfg.scale * 10) / 10.0
+        #             scale = random.randint(rrdb_denselayer_DeepMIH.py, cfg.scale * 10) / 10.0
         scale = 2
 
         current_iter = epoch * len(train_loader) + i + 1

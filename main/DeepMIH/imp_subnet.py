@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import modules.module_util as mutil
-import modules.Unet_common as common
+import models.modules.module_util as mutil
+import models.modules.Unet_common as common
 import functools
 import config as c
-from non_local_dot_product import NONLocalBlock2D
+from models.non_local_dot_product import NONLocalBlock2D
 
 
 class SELayer(nn.Module):
@@ -108,8 +108,15 @@ class ImpMapBlock(nn.Module):
         x_cover = self.s_cover(cover)
         x_steg = self.s_steg(steg)
         x_secret = self.s_secret(secret)
-        x = torch.cat((x_cover, x_steg), 1)
-        x = torch.cat((x, x_secret), 1)
+
+        pad_x = (x_steg.shape[2] - x_cover.shape[2]) // 2
+        pad_y = (x_steg.shape[3] - x_cover.shape[3]) // 2
+
+        x_cover_pad = F.pad(x_cover, (pad_y, pad_y, pad_x, pad_x))
+        x_secret_pad = F.pad(x_secret, (pad_y, pad_y, pad_x, pad_x))
+
+        x = torch.cat((x_cover_pad, x_steg), 1)
+        x = torch.cat((x, x_secret_pad), 1)
         x = self.rrdb(x)
 
         return x
