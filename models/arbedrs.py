@@ -24,8 +24,10 @@ class EDRS(BaseModel):
         self.add_mean = MeanShift(args.rgb_range, sign=1)
 
         # define head module
-        if ifsec is not None:
+        if ifsec == 1:
             m_head = [conv(args.n_colors + 3, n_feats, kernel_size)]
+        elif ifsec == 2:
+            m_head = [conv(args.n_colors + 6, n_feats, kernel_size)]
         else:
             m_head = [conv(args.n_colors, n_feats, kernel_size)]
 
@@ -84,6 +86,13 @@ class EDRS(BaseModel):
             x1 = self.sub_mean(x1)
             x2 = self.sub_mean(x2)
             x = torch.cat([x1, x2], dim=1)
+        elif x.shape[1] == 9:
+            x1 = x[:, 3:6, ...]
+            x2 = x[:, 0:3, ...]
+            x3 = x[:, 6:9, ...]
+            x1 = self.sub_mean(x1)
+            x2 = self.sub_mean(x2)
+            x = torch.cat([x1, x2, x3], dim=1)
         else:
             x = self.sub_mean(x)
         x = self.head(x)

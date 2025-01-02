@@ -1,2 +1,4 @@
 *.pth.tar
 __pycache__/
+/main/hidden/hidden256/
+/main/hidden/checkpoints/
