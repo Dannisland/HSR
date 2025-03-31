@@ -6,8 +6,13 @@ import pdb
 
 import mmcv
 import numpy as np
+from PIL import Image
 from mmengine import list_from_file
 from torch.utils.data import Dataset
+from torchvision import transforms
+from torchvision.transforms import InterpolationMode
+from scipy.ndimage import zoom
+
 import dataset.transform as Xform
 import torch
 
@@ -20,6 +25,12 @@ class DIV2K(Dataset):
         self.imgs = list_from_file(data_list, prefix=cfg.data_root + '/')
         assert self.cfg.patch_size % self.cfg.base_resolution == 0, "Patch size must base resolution"
         self.training = training
+
+        self.transforms_ = transforms.Compose([transforms.Resize(cfg.patch_size, InterpolationMode.BICUBIC),
+                       # transforms.RandomCrop(256),
+                       # transforms.RandomHorizontalFlip(),
+                       transforms.ToTensor()]
+                       )
 
     def __len__(self):
         if not self.cfg.debug:
@@ -40,19 +51,25 @@ class DIV2K(Dataset):
         img_sec_3 = mmcv.imread(self.imgs[random.randint(0, len(self.imgs) - 1)]).astype(np.float32) / 255.
 
         if self.cfg.benchmark:
-            img_gt = mmcv.imresize(img_gt, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
-            img_sec = mmcv.imresize(img_sec, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
-            img_sec_2 = mmcv.imresize(img_sec_2, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
-            img_sec_3 = mmcv.imresize(img_sec_3, (self.cfg.patch_size + 20, self.cfg.patch_size + 20))
+            # img_gt_pil = Image.fromarray((img_gt * 255).astype(np.uint8))
+            # img_gt = self.transforms_(img_gt_pil)
+
+            img_gt = mmcv.imresize(img_gt, (self.cfg.patch_size, self.cfg.patch_size))
+            img_sec = mmcv.imresize(img_sec, (self.cfg.patch_size, self.cfg.patch_size))
+            img_sec_2 = mmcv.imresize(img_sec_2, (self.cfg.patch_size, self.cfg.patch_size))
+            img_sec_3 = mmcv.imresize(img_sec_3, (self.cfg.patch_size, self.cfg.patch_size))
 
 
-        # if self.training:
-        img_gt = Xform.random_crop(img_gt, self.cfg.patch_size)
-        img_gt = Xform.augment(img_gt, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
-        img_sec = Xform.random_crop(img_sec, self.cfg.patch_size)
-        img_sec = Xform.augment(img_sec, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
-        img_sec_2 = Xform.random_crop(img_sec_2, self.cfg.patch_size)
-        img_sec_2 = Xform.augment(img_sec_2, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
+        if self.training:
+            img_gt = Xform.random_crop(img_gt, self.cfg.patch_size)
+            img_gt = Xform.augment(img_gt, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
+            img_sec = Xform.random_crop(img_sec, self.cfg.patch_size)
+            img_sec = Xform.augment(img_sec, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
+            img_sec_2 = Xform.random_crop(img_sec_2, self.cfg.patch_size)
+            img_sec_2 = Xform.augment(img_sec_2, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
+            ############################# if sec3
+            img_sec_3 = Xform.random_crop(img_sec_3, self.cfg.patch_size)
+            img_sec_3 = Xform.augment(img_sec_3, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
 
 
         img_gt = mmcv.bgr2rgb(img_gt)
@@ -61,12 +78,9 @@ class DIV2K(Dataset):
         img_sec = torch.from_numpy(img_sec.transpose((2, 0, 1)))
         img_sec_2 = mmcv.bgr2rgb(img_sec_2)
         img_sec_2 = torch.from_numpy(img_sec_2.transpose((2, 0, 1)))
-
-        ############################# if sec3
-        img_sec_3 = Xform.random_crop(img_sec_3, self.cfg.patch_size)
-        img_sec_3 = Xform.augment(img_sec_3, hflip=self.cfg.hflip, rotation=self.cfg.rotation)
         img_sec_3 = mmcv.bgr2rgb(img_sec_3)
         img_sec_3 = torch.from_numpy(img_sec_3.transpose((2, 0, 1)))
+
         return {'img_gt': img_gt, 'img_sec': img_sec, 'img_sec_2': img_sec_2, 'img_sec_3': img_sec_3}
 
 

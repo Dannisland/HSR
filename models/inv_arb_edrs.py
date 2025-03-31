@@ -8,7 +8,7 @@ from models.lib.quantization import Quantization, Quantization_RS
 
 class InvArbEDRS_3loop(BaseModel):
     def __init__(self, cfg=None):
-        super(InvArbEDRS, self).__init__()
+        super(InvArbEDRS_3loop, self).__init__()
         self.cfg = cfg
         # cfg.rescale = 'down'
         # self.down_net = EDRS(cfg)
@@ -33,7 +33,7 @@ class InvArbEDRS_3loop(BaseModel):
 
         self.up_net_3 = EDRS(cfg, ifsec=True)
 
-    def forward(self, x, sec, sec_2, sec_3, imp_net, scale, precalculated_lr=None):
+    def forward(self, x, sec, sec_2, sec_3, scale, precalculated_lr=None):
         B, C, H2, W2 = sec_2.shape
         _, _, H3, W3 = sec_3.shape
 
@@ -80,6 +80,42 @@ class InvArbEDRS(BaseModel):
         sr_1 = self.up_net(lr_processed, scale, H2, H2)
 
         lr_processed_2 = torch.cat([sr_1, sec_2, imp_net], dim=1)
+        sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
+
+        return sr_1, sr_2
+
+
+class InvArbEDRS_loop(BaseModel):
+    def __init__(self, cfg=None):
+        super(InvArbEDRS_loop, self).__init__()
+        self.cfg = cfg
+        # cfg.rescale = 'down'
+        # self.down_net = EDRS(cfg)
+        # if cfg.quantization and cfg.quantization_type == 'naive':
+        #     self.quantizer = Quantization()
+        # elif cfg.quantization and cfg.quantization_type == 'round_soft':
+        #     self.quantizer = Quantization_RS()
+        # else:
+        #     self.quantizer = None
+
+        if cfg.jpeg:
+            if cfg.jpeg_type == 'DiffJPEG':
+                from models.lib.jpg_module_DiffJPEG import JPGQuantizeFun
+                self.jpeg = JPGQuantizeFun(quality=90)
+            else:
+                raise NotImplementedError(
+                    'JPEG Compression Simulator {' + cfg.jpeg_type + '} has not been implemented!')
+        cfg.rescale = 'up'
+        self.up_net = EDRS(cfg, ifsec=1)
+        self.up_net_2 = EDRS(cfg, ifsec=1)
+
+    def forward(self, x, sec, sec_2, scale, precalculated_lr=None):
+        B, C, H2, W2 = sec_2.shape
+
+        lr_processed = torch.cat([x, sec], dim=1)
+        sr_1 = self.up_net(lr_processed, scale, H2, H2)
+
+        lr_processed_2 = torch.cat([sr_1, sec_2], dim=1)
         sr_2 = self.up_net_2(lr_processed_2, scale, int(H2 * scale), int(H2 * scale))
 
         return sr_1, sr_2

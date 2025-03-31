@@ -7,6 +7,7 @@ import sys
 import cv2
 from os.path import join
 
+import torchvision
 from torch import nn
 from tqdm import tqdm
 
@@ -135,6 +136,51 @@ def test(model, revealNet, revealNet_2, revealNet_3, test_data_loader, scale=4, 
                 recovered_2 = torch.clamp(recovered_2, 0, 1)
                 recovered_3 = torch.clamp(recovered_3, 0, 1)
 
+                # =======================================
+                torchvision.utils.save_image(hr, "/opt/data/xiaobin/AIDN/assets/hr/hr" + str(i) + ".jpg")
+                torchvision.utils.save_image(lr_1_8, "/opt/data/xiaobin/AIDN/assets/lr/lr" + str(i) + ".jpg")
+                torchvision.utils.save_image(lr_1_4, "/opt/data/xiaobin/AIDN/assets/lr2/lr" + str(i) + ".jpg")
+                torchvision.utils.save_image(lr_1_2, "/opt/data/xiaobin/AIDN/assets/lr3/lr" + str(i) + ".jpg")
+
+                torchvision.utils.save_image(restored_hr, "/opt/data/xiaobin/AIDN/assets/stego/stego" + str(i) + ".jpg")
+                torchvision.utils.save_image(restored_hr2,
+                                             "/opt/data/xiaobin/AIDN/assets/stego2/stego" + str(i) + ".jpg")
+                torchvision.utils.save_image(restored_hr3,
+                                             "/opt/data/xiaobin/AIDN/assets/stego3/stego" + str(i) + ".jpg")
+
+                torchvision.utils.save_image(sec, "/opt/data/xiaobin/AIDN/assets/sec/sec" + str(i) + ".jpg")
+                torchvision.utils.save_image(sec_2, "/opt/data/xiaobin/AIDN/assets/sec2/sec" + str(i) + ".jpg")
+                torchvision.utils.save_image(sec_3, "/opt/data/xiaobin/AIDN/assets/sec3/sec" + str(i) + ".jpg")
+
+                torchvision.utils.save_image(recovered,
+                                             "/opt/data/xiaobin/AIDN/assets/rec/rec" + str(i) + ".jpg")
+                torchvision.utils.save_image(recovered_2,
+                                             "/opt/data/xiaobin/AIDN/assets/rec2/rec" + str(i) + ".jpg")
+                torchvision.utils.save_image(recovered_3,
+                                             "/opt/data/xiaobin/AIDN/assets/rec3/rec" + str(i) + ".jpg")
+
+
+                res_stego1 = (lr_1_4 - restored_hr) * 10
+                res_stego2 = (lr_1_2 - restored_hr2) * 10
+                res_stego3 = (hr - restored_hr3) * 10
+                res_rec = (sec - recovered) * 10
+                res_rec2 = (sec_2 - recovered_2) * 10
+                res_rec3 = (sec_3 - recovered_3) * 10
+                torchvision.utils.save_image(res_stego1,
+                                             "/opt/data/xiaobin/AIDN/assets/res-stego/res" + str(i) + ".jpg")
+                torchvision.utils.save_image(res_stego2,
+                                             "/opt/data/xiaobin/AIDN/assets/res-stego2/res" + str(i) + ".jpg")
+                torchvision.utils.save_image(res_stego3,
+                                             "/opt/data/xiaobin/AIDN/assets/res-stego3/res" + str(i) + ".jpg")
+
+                torchvision.utils.save_image(res_rec, "/opt/data/xiaobin/AIDN/assets/res-rec/res" + str(i) + ".jpg")
+                torchvision.utils.save_image(res_rec2, "/opt/data/xiaobin/AIDN/assets/res-rec2/res" + str(i) + ".jpg")
+                torchvision.utils.save_image(res_rec3, "/opt/data/xiaobin/AIDN/assets/res-rec3/res" + str(i) + ".jpg")
+
+                # =======================================
+
+
+
                 ########################## CALCULATE METRIC
                 restored_hr = util.tensor2img(restored_hr)
                 restored_hr2 = util.tensor2img(restored_hr2)
@@ -150,17 +196,7 @@ def test(model, revealNet, revealNet_2, revealNet_3, test_data_loader, scale=4, 
                 lr_1_4 = util.tensor2img(lr_1_4)
                 lr_1_2 = util.tensor2img(lr_1_2)
 
-                # if crop:
-                #     crop_border = math.ceil(scale)
-                #     restored_hr = restored_hr[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     restored_hr2 = restored_hr2[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     recovered = recovered[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     recovered_2 = recovered_2[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     sec = sec[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     sec_2 = sec_2[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     hr = hr[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     lr_1_4 = lr_1_4[crop_border:-crop_border, crop_border:-crop_border, :]
-                #     lr_1_2 = lr_1_2[crop_border:-crop_border, crop_border:-crop_border, :]
+
 
                 psnr_meter_sr_1_4.update(util.calculate_psnr(restored_hr * 255, lr_1_4 * 255))
                 psnr_meter_sr_1_2.update(util.calculate_psnr(restored_hr2 * 255, lr_1_2 * 255))

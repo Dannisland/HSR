@@ -4,7 +4,7 @@ DATA:
   train_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/train.txt
   val_set: /opt/data/xiaobin/MyDatasets/DIV2K/list/val.txt
   loop: 1
-  patch_size: 288
+  patch_size: 288 # 192
   hflip: True
   rotation: True
   rgb_range: 1.0
@@ -16,7 +16,7 @@ LOSS:
 
 NETWORK:
   base_resolution: 4
-  arch: InvEDRS_arb
+  arch: InvEDRS_arb # InvEDRS_loop3 # InvEDRS_arb
   up_sampler: sampleB
   down_sampler: sampleB
   n_resblocks: 16
@@ -71,6 +71,7 @@ Distributed:
   world_size: 1
   rank: 0
 
+
 TEST:
   exp_name: AIDN
   test_root: ../Data/
@@ -82,6 +83,6 @@ TEST:
   test_workers: 2
   test_gpu: [0]
   test_batch_size: 1
-  model_path:
-  save_folder:
+  model_path: /opt/data/xiaobin/AIDN/LOG/DIV2K/2024-12-09-test_1.5_imp_dist/model/AIDN.pth.tar
+  save_folder: /opt/data/xiaobin/AIDN/LOG/DIV2K/2024-12-09-test_1.5_imp_dist/result
   benchmark: True
