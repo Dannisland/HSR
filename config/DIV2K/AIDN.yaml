@@ -44,7 +44,7 @@ TRAIN:
   train_gpu: [0]
   workers: 16  # data loader workers
   # todo 记得每次要调整todo内容 ==> batch_size  288: 5  432 : 2
-  batch_size: 12  # batch size for training
+  batch_size: 10  # batch size for training
   batch_size_val: 16  # batch size for validation during training, memory and speed tradeoff
   base_lr: 0.0001
   StepLR: True
